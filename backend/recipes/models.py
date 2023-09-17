@@ -102,4 +102,14 @@ class IngredientsAmount(models.Model):
         # ordering = ('id',)
 
     def __str__(self):
-        return f'{self.ingredients} {self.recipe}'
+        return f'{self.ingredient} {self.recipe}'
+
+
+class TagsRecipe(models.Model):
+    """Модель связи рецептов с тегами."""
+
+    tag = models.ForeignKey(Tags, on_delete=models.CASCADE)
+    recipe = models.ForeignKey(Recipes, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f'{self.tag} {self.recipe}'

@@ -1,3 +1,22 @@
 from django.contrib import admin
 
-# Register your models here.
+from .models import Tags, Ingredients, Recipes, IngredientsAmount
+
+
+class IngredientsInline(admin.TabularInline):
+    model = IngredientsAmount
+    extra = 1
+
+
+class RecipesAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'author', 'image', 'text', 'cooking_time')
+    inlines = (IngredientsInline,)
+    # search_fields = ('text',)
+    # list_filter = ('pub_date',)
+    # empty_value_display = '-пусто-'
+
+
+admin.site.register(Tags)
+admin.site.register(Ingredients)
+admin.site.register(IngredientsAmount)
+admin.site.register(Recipes, RecipesAdmin)

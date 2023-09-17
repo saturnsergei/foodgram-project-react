@@ -15,8 +15,7 @@ class ReadOnly(BasePermission):
 
 class IsAuthor(BasePermission):
     """Класс разрешения, проверяющий права пользователя
-    на редактирование контента.
-    """
+    на редактирование контента."""
 
     def has_permission(self, request, view):
         """Проверяет разрешения на уровне запроса."""
@@ -29,8 +28,7 @@ class IsAuthor(BasePermission):
 
 class IsAdmin(BasePermission):
     """Класс разрешения, проверяющий права пользователя
-    на администрирование.
-    """
+    на администрирование."""
 
     def has_permission(self, request, view):
         """Проверяет разрешения на уровне запроса."""
