@@ -1,11 +1,12 @@
-from datetime import datetime
+# from datetime import datetime
 
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from django.contrib.auth.hashers import make_password, check_password
 
-from recipes.models import Tags, Ingredients, Recipes, IngredientsAmount, IngredientsAmount
+from recipes.models import (Tags, Ingredients, Recipes,
+                            IngredientsAmount, Follow)
 
 User = get_user_model()
 
@@ -19,7 +20,7 @@ class TokenSerializer(serializers.Serializer):
     def validate(self, data):
         user = get_object_or_404(
             User, email=data.get('email'))
-        
+
         if not check_password(data.get('password'), user.password):
             raise serializers.ValidationError(
                 'Неправильный пароль')
@@ -28,24 +29,37 @@ class TokenSerializer(serializers.Serializer):
 
 # class LogoutSerializer(serializers.Serializer):
 
+class IsSubscribedSerializer(serializers.ModelSerializer):
 
-class UserSerializer(serializers.ModelSerializer):
+    is_subscribed = serializers.SerializerMethodField()
 
-# is_subscribed
+    def get_is_subscribed(self, obj):
+        user = self.context.get('user')
+        return Follow.objects.filter(
+            user=user,
+            author=obj
+        ).exists()
+
+
+class UserSerializer(IsSubscribedSerializer):
+
     class Meta:
         model = User
-        fields = ('email', 'id', 'username', 'first_name', 'last_name', 'password')
+        fields = ('email', 'id', 'username', 'first_name', 'last_name',
+                  'password', 'is_subscribed')
         write_only_fields = ('password')
         extra_kwargs = {'password': {'write_only': True}}
 
     def create(self, validated_data):
         if "password" in validated_data:
-            validated_data["password"] = make_password(validated_data["password"])
+            validated_data["password"] = make_password(
+                validated_data["password"])
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
         if "password" in validated_data:
-            validated_data["password"] = make_password(validated_data["password"])
+            validated_data["password"] = make_password(
+                validated_data["password"])
         return super().update(instance, validated_data)
 
 
@@ -86,7 +100,8 @@ class IngredientsAmountSerializer(serializers.ModelSerializer):
 
     id = serializers.ReadOnlyField(source='ingredient.id')
     name = serializers.ReadOnlyField(source='ingredient.name')
-    measurement_unit = serializers.ReadOnlyField(source='ingredient.measurement_unit')
+    measurement_unit = serializers.ReadOnlyField(
+        source='ingredient.measurement_unit')
 
     class Meta:
         model = IngredientsAmount
@@ -97,7 +112,8 @@ class RecipesSerializer(serializers.ModelSerializer):
     """Сериализатор для модели рецептов"""
 
     tags = TagsSerializer(many=True, read_only=True)
-    ingredients = IngredientsAmountSerializer(source='ingredientsamount_set', many=True, read_only=True)
+    ingredients = IngredientsAmountSerializer(
+        source='ingredientsamount_set', many=True, read_only=True)
     image = serializers.SerializerMethodField(
         'get_image_url',
         read_only=True,
@@ -108,9 +124,8 @@ class RecipesSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Recipes
-        fields = (
-            'id', 'tags', 'author', 'ingredients', 'name', 'image', 'text', 'cooking_time',
-        )
+        fields = ('id', 'tags', 'author', 'ingredients', 'name', 'image',
+                  'text', 'cooking_time',)
         read_only_fields = ('author',)
         depth = 1
 
@@ -151,7 +166,8 @@ class RecipesSerializer(serializers.ModelSerializer):
                 amount = ingredient.get('amount')
                 current_ingredient = get_object_or_404(Ingredients, pk=id)
                 IngredientsAmount.objects.create(
-                    ingredient=current_ingredient, recipe=instance, amount=amount
+                    ingredient=current_ingredient,
+                    recipe=instance, amount=amount
                 )
         if 'tags' in self.initial_data:
             tags = self.initial_data.get('tags')
@@ -161,3 +177,49 @@ class RecipesSerializer(serializers.ModelSerializer):
         instance.__dict__.update(**validated_data)
         instance.save()
         return instance
+
+
+class RecipesShortSerializer(serializers.ModelSerializer):
+    """Сериализатор для сокращенной модели рецептов."""
+
+    class Meta:
+        model = Recipes
+        fields = (
+            'id', 'name', 'image', 'cooking_time',
+        )
+
+
+class FollowSerializer(IsSubscribedSerializer):
+
+    recipes_count = serializers.SerializerMethodField()
+    recipes = RecipesShortSerializer(many=True, read_only=True)
+
+    def get_recipes_count(self, obj):
+        return obj.recipes.count()
+
+    class Meta:
+        model = User
+        fields = ('email', 'id', 'username', 'first_name', 'last_name',
+                  'is_subscribed', 'recipes', 'recipes_count')
+        read_only_fields = ('email', 'id', 'username', 'first_name',
+                            'last_name', 'is_subscribed', 'recipes',
+                            'recipes_count')
+
+
+class FollowSerializerSubscribe(FollowSerializer):
+
+    def validate(self, data):
+        author = self.instance
+        user = self.context['user']
+
+        if user == author:
+            raise serializers.ValidationError(
+                'Нельзя подписаться на самого себя')
+
+        if Follow.objects.filter(
+            user=user,
+            author=author
+        ).exists():
+            raise serializers.ValidationError('Нельзя подписаться второй раз')
+
+        return data

@@ -9,8 +9,11 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
 
-from recipes.models import Tags, Ingredients, Recipes
-from .serializers import TagsSerializer, IngredientsSerializer, RecipesSerializer, TokenSerializer, UserSerializer, ChangePasswordSerializer
+from recipes.models import Tags, Ingredients, Recipes, Follow
+from .serializers import (TagsSerializer, IngredientsSerializer,
+                          RecipesSerializer, TokenSerializer, UserSerializer,
+                          ChangePasswordSerializer, FollowSerializer,
+                          FollowSerializerSubscribe)
 
 User = get_user_model()
 
@@ -31,7 +34,7 @@ class TokenView(APIView):
             status=status.HTTP_201_CREATED)
 
 
-class UserViewSet(mixins.CreateModelMixin, 
+class UserViewSet(mixins.CreateModelMixin,
                   mixins.ListModelMixin,
                   mixins.RetrieveModelMixin,
                   viewsets.GenericViewSet):
@@ -41,6 +44,11 @@ class UserViewSet(mixins.CreateModelMixin,
     queryset = User.objects.all()
     serializer_class = UserSerializer
     pagination_class = None
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({"user": self.request.user})
+        return context
 
     @action(
         detail=False,
@@ -56,12 +64,48 @@ class UserViewSet(mixins.CreateModelMixin,
         methods=['POST'],
         permission_classes=(IsAuthenticated,))
     def set_password(self, request):
-        serializer = ChangePasswordSerializer(instance=request.user, data=request.data)
-        if serializer.is_valid(raise_exception=True):        
+        serializer = ChangePasswordSerializer(
+            instance=request.user, data=request.data)
+        if serializer.is_valid(raise_exception=True):
             new_password = serializer.validated_data.get('new_password')
             request.user.set_password(new_password)
             request.user.save()
             return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
+
+    @action(
+        detail=False,
+        methods=['GET'],
+        permission_classes=(IsAuthenticated,))
+    def subscriptions(self, request):
+
+        users = User.objects.filter(following__user=request.user)
+        serializer = FollowSerializer(
+            users, many=True, context={'user': request.user})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(
+        detail=True,
+        methods=['POST', 'DELETE'],
+        permission_classes=(IsAuthenticated,))
+    def subscribe(self, request, pk=None):
+        author = get_object_or_404(User, pk=pk)
+
+        if request.method == 'POST':
+            serializer = FollowSerializerSubscribe(
+                author, data=request.data, context={'user': request.user})
+            if serializer.is_valid(raise_exception=True):
+                Follow.objects.create(user=request.user, author=author)
+                return Response(serializer.data,
+                                status=status.HTTP_201_CREATED)
+
+        queryset = Follow.objects.filter(user=request.user, author=author)
+        if not queryset.exists():
+            return Response({'errors': 'Вы не подписаны на автора'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        else:
+            follower = Follow.objects.filter(user=request.user, author=author)
+            follower.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class TagsViewSet(mixins.ListModelMixin,

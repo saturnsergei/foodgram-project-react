@@ -64,7 +64,7 @@ class Recipes(models.Model):
     name = models.CharField(max_length=200, blank=False)
     author = models.ForeignKey(
         User,
-        related_name='recipe',
+        related_name='recipes',
         on_delete=models.CASCADE,
         blank=False,
         verbose_name='Автор'
@@ -113,3 +113,25 @@ class TagsRecipe(models.Model):
 
     def __str__(self):
         return f'{self.tag} {self.recipe}'
+
+
+class Follow(models.Model):
+    class Meta:
+        verbose_name = 'Подписка'
+        verbose_name_plural = 'Подписки'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'author'],
+                name='unique_user_author'
+            )
+        ]
+
+    user = models.ForeignKey(User,
+                             on_delete=models.CASCADE,
+                             related_name='follower',
+                             verbose_name='Подписчик')
+
+    author = models.ForeignKey(User,
+                               on_delete=models.CASCADE,
+                               related_name='following',
+                               verbose_name='Автор')
