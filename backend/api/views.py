@@ -9,11 +9,11 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
 
-from recipes.models import Tags, Ingredients, Recipes, Follow
+from recipes.models import Tags, Ingredients, Recipes, Follow, Favorite
 from .serializers import (TagsSerializer, IngredientsSerializer,
                           RecipesSerializer, TokenSerializer, UserSerializer,
                           ChangePasswordSerializer, FollowSerializer,
-                          FollowSerializerSubscribe)
+                          FollowSubscribeSerializer, FavoriteSerializer)
 
 User = get_user_model()
 
@@ -91,7 +91,7 @@ class UserViewSet(mixins.CreateModelMixin,
         author = get_object_or_404(User, pk=pk)
 
         if request.method == 'POST':
-            serializer = FollowSerializerSubscribe(
+            serializer = FollowSubscribeSerializer(
                 author, data=request.data, context={'user': request.user})
             if serializer.is_valid(raise_exception=True):
                 Follow.objects.create(user=request.user, author=author)
@@ -133,3 +133,28 @@ class RecipesViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
+
+    @action(
+        detail=True,
+        methods=['POST', 'DELETE'],
+        permission_classes=(IsAuthenticated,))
+    def favorite(self, request, pk=None):
+        recipe = get_object_or_404(Recipes, pk=pk)
+
+        if request.method == 'POST':
+            serializer = FavoriteSerializer(
+                recipe, data=request.data, context={'user': request.user})
+            if serializer.is_valid(raise_exception=True):
+                Favorite.objects.create(user=request.user, recipe=recipe)
+                return Response(serializer.data,
+                                status=status.HTTP_201_CREATED)
+
+        queryset = Favorite.objects.filter(user=request.user, recipe=recipe)
+        if not queryset.exists():
+            return Response({'errors': 'Рецепт не добавлен в избранное'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        else:
+            favorite = Favorite.objects.filter(
+                user=request.user, recipe=recipe)
+            favorite.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)

@@ -88,6 +88,7 @@ class Recipes(models.Model):
         verbose_name='Теги'
     )
     cooking_time = models.IntegerField(blank=False)
+    # todo meta
 
 
 class IngredientsAmount(models.Model):
@@ -135,3 +136,26 @@ class Follow(models.Model):
                                on_delete=models.CASCADE,
                                related_name='following',
                                verbose_name='Автор')
+
+
+class Favorite(models.Model):
+
+    user = models.ForeignKey(User,
+                             on_delete=models.CASCADE,
+                             related_name='favorite_recipe',
+                             verbose_name='Пользователь')
+
+    recipe = models.ForeignKey(Recipes,
+                               on_delete=models.CASCADE,
+                               related_name='favorite_user',
+                               verbose_name='Рецепт') 
+
+    class Meta:
+        verbose_name = 'Избранное'
+        verbose_name_plural = 'Избранное'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'recipe'],
+                name='unique_user_recipe'
+            )
+        ]

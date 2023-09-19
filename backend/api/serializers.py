@@ -6,7 +6,7 @@ from rest_framework import serializers
 from django.contrib.auth.hashers import make_password, check_password
 
 from recipes.models import (Tags, Ingredients, Recipes,
-                            IngredientsAmount, Follow)
+                            IngredientsAmount, Follow, Favorite)
 
 User = get_user_model()
 
@@ -187,6 +187,7 @@ class RecipesShortSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'name', 'image', 'cooking_time',
         )
+        read_only_fields = ('id', 'name', 'image', 'cooking_time')
 
 
 class FollowSerializer(IsSubscribedSerializer):
@@ -206,7 +207,7 @@ class FollowSerializer(IsSubscribedSerializer):
                             'recipes_count')
 
 
-class FollowSerializerSubscribe(FollowSerializer):
+class FollowSubscribeSerializer(FollowSerializer):
 
     def validate(self, data):
         author = self.instance
@@ -221,5 +222,21 @@ class FollowSerializerSubscribe(FollowSerializer):
             author=author
         ).exists():
             raise serializers.ValidationError('Нельзя подписаться второй раз')
+
+        return data
+
+
+class FavoriteSerializer(RecipesShortSerializer):
+
+    def validate(self, data):
+        recipe = self.instance
+        user = self.context['user']
+
+        if Favorite.objects.filter(
+            user=user,
+            recipe=recipe
+        ).exists():
+            raise serializers.ValidationError(
+                'Нельзя добавить в избранное второй раз')
 
         return data
