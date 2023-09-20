@@ -6,7 +6,7 @@ from rest_framework import serializers
 from django.contrib.auth.hashers import make_password, check_password
 
 from recipes.models import (Tags, Ingredients, Recipes,
-                            IngredientsAmount, Follow, Favorite)
+                            IngredientsAmount, Follow, Favorite, ShoppingCart)
 
 User = get_user_model()
 
@@ -238,5 +238,21 @@ class FavoriteSerializer(RecipesShortSerializer):
         ).exists():
             raise serializers.ValidationError(
                 'Нельзя добавить в избранное второй раз')
+
+        return data
+
+
+class ShoppingCartSerializer(RecipesShortSerializer):
+
+    def validate(self, data):
+        recipe = self.instance
+        user = self.context['user']
+
+        if ShoppingCart.objects.filter(
+            user=user,
+            recipe=recipe
+        ).exists():
+            raise serializers.ValidationError(
+                'Рецепт уже добавлен в список покупок')
 
         return data
