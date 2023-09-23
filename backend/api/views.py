@@ -1,6 +1,6 @@
 import io
-from rest_framework import filters, mixins, status, viewsets
-from rest_framework.pagination import PageNumberPagination
+from rest_framework import mixins, status, viewsets
+from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth import get_user_model
 from django.db.models import Sum
 from django.http import HttpResponse
@@ -11,14 +11,15 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
-
-from recipes.models import (Tags, Ingredients, Recipes, Follow, Favorite, 
+from .pagination import PagePagination
+from recipes.models import (Tags, Ingredients, Recipes, Follow, Favorite,
                             ShoppingCart, IngredientsAmount)
 from .serializers import (TagsSerializer, IngredientsSerializer,
                           RecipesSerializer, TokenSerializer, UserSerializer,
                           ChangePasswordSerializer, FollowSerializer,
                           FollowSubscribeSerializer, FavoriteSerializer,
                           ShoppingCartSerializer)
+from .filters import RecipeFilter, IngredientFilter
 
 User = get_user_model()
 
@@ -48,7 +49,7 @@ class UserViewSet(mixins.CreateModelMixin,
 
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    pagination_class = None
+    pagination_class = PagePagination
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -84,6 +85,14 @@ class UserViewSet(mixins.CreateModelMixin,
     def subscriptions(self, request):
 
         users = User.objects.filter(following__user=request.user)
+
+        page = self.paginate_queryset(users)
+        if page is not None:
+            # TODO
+            serializer = FollowSerializer(
+                page, many=True, context={
+                    'user': request.user, 'request': request})
+            return self.get_paginated_response(serializer.data)
         serializer = FollowSerializer(
             users, many=True, context={'user': request.user})
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -129,15 +138,24 @@ class IngredientsViewSet(mixins.ListModelMixin,
     queryset = Ingredients.objects.all()
     serializer_class = IngredientsSerializer
     pagination_class = None
+    filter_backends = (IngredientFilter,)
+    search_fields = ('^name')
 
 
 class RecipesViewSet(viewsets.ModelViewSet):
     queryset = Recipes.objects.all()
     serializer_class = RecipesSerializer
-    pagination_class = None
+    pagination_class = PagePagination
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = RecipeFilter
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({"user": self.request.user})
+        return context
 
     @action(
         detail=True,
