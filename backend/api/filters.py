@@ -1,7 +1,7 @@
 from django_filters import rest_framework as filters
 from rest_framework import filters as search_filter
 
-from recipes.models import Recipes
+from recipes.models import Recipe
 
 
 class IngredientFilter(search_filter.SearchFilter):
@@ -41,5 +41,5 @@ class RecipeFilter(filters.FilterSet):
         return queryset
 
     class Meta:
-        model = Recipes
+        model = Recipe
         fields = ['author', 'tags', 'is_favorited', 'is_in_shopping_cart']

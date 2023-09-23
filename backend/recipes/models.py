@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
-class Tags(models.Model):
+class Tag(models.Model):
     """Модель тегов рецептов."""
 
     class Meta:
@@ -35,7 +35,7 @@ class Tags(models.Model):
     )
 
 
-class Ingredients(models.Model):
+class Ingredient(models.Model):
     """Модель ингредиентов рецептов."""
 
     class Meta:
@@ -58,7 +58,7 @@ class Ingredients(models.Model):
     )
 
 
-class Recipes(models.Model):
+class Recipe(models.Model):
     """Модель рецептов."""
 
     class Meta:
@@ -81,13 +81,13 @@ class Recipes(models.Model):
     )
     text = models.TextField(blank=False, verbose_name='Описание')
     ingredients = models.ManyToManyField(
-        Ingredients,
-        through='IngredientsAmount',
+        Ingredient,
+        through='IngredientAmount',
         related_name='recipes',
         verbose_name='Ингредиенты'
     )
     tags = models.ManyToManyField(
-        Tags,
+        Tag,
         related_name='recipes',
         blank=False,
         verbose_name='Теги'
@@ -99,7 +99,7 @@ class Recipes(models.Model):
     )
 
 
-class IngredientsAmount(models.Model):
+class IngredientAmount(models.Model):
     """Модель ингредиентов рецептов с количеством."""
 
     class Meta:
@@ -109,19 +109,9 @@ class IngredientsAmount(models.Model):
     def __str__(self):
         return f'{self.ingredient} {self.recipe}'
 
-    ingredient = models.ForeignKey(Ingredients, on_delete=models.CASCADE)
-    recipe = models.ForeignKey(Recipes, on_delete=models.CASCADE)
+    ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
+    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
     amount = models.PositiveIntegerField()
-
-
-class TagsRecipe(models.Model):
-    """Модель связи рецептов с тегами."""
-
-    tag = models.ForeignKey(Tags, on_delete=models.CASCADE)
-    recipe = models.ForeignKey(Recipes, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return f'{self.tag} {self.recipe}'
 
 
 class Follow(models.Model):
@@ -164,7 +154,7 @@ class Favorite(models.Model):
                              related_name='favorite_recipe',
                              verbose_name='Пользователь')
 
-    recipe = models.ForeignKey(Recipes,
+    recipe = models.ForeignKey(Recipe,
                                on_delete=models.CASCADE,
                                related_name='favorite_user',
                                verbose_name='Рецепт')
@@ -187,7 +177,7 @@ class ShoppingCart(models.Model):
                              related_name='cart_recipe',
                              verbose_name='Пользователь')
 
-    recipe = models.ForeignKey(Recipes,
+    recipe = models.ForeignKey(Recipe,
                                on_delete=models.CASCADE,
                                related_name='cart_user',
                                verbose_name='Рецепт')

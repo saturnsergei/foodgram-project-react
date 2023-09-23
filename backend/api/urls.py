@@ -8,9 +8,9 @@ app_name = 'api'
 router_v1 = routers.DefaultRouter()
 # router_v1.register(r'categories', CategoryViewSet)
 # router_v1.register(r'genres', GenreViewSet)
-router_v1.register(r'tags', views.TagsViewSet)
-router_v1.register(r'ingredients', views.IngredientsViewSet)
-router_v1.register(r'recipes', views.RecipesViewSet)
+router_v1.register(r'tags', views.TagViewSet)
+router_v1.register(r'ingredients', views.IngredientViewSet)
+router_v1.register(r'recipes', views.RecipeViewSet)
 router_v1.register(r'users', views.UserViewSet, basename='users')
 # router_v1.register(
 #     r'^titles/(?P<title_id>\d+)/reviews',

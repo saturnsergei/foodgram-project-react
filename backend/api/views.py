@@ -12,10 +12,10 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from .pagination import PagePagination
-from recipes.models import (Tags, Ingredients, Recipes, Follow, Favorite,
-                            ShoppingCart, IngredientsAmount)
-from .serializers import (TagsSerializer, IngredientsSerializer,
-                          RecipesSerializer, TokenSerializer, UserSerializer,
+from recipes.models import (Tag, Ingredient, Recipe, Follow, Favorite,
+                            ShoppingCart, IngredientAmount)
+from .serializers import (TagSerializer, IngredientSerializer,
+                          RecipeSerializer, TokenSerializer, UserSerializer,
                           ChangePasswordSerializer, FollowSerializer,
                           FollowSubscribeSerializer, FavoriteSerializer,
                           ShoppingCartSerializer)
@@ -46,7 +46,7 @@ class UserViewSet(mixins.CreateModelMixin,
                   mixins.RetrieveModelMixin,
                   viewsets.GenericViewSet):
 
-    permission_classes = (ReadOnly,)
+    permission_classes = (AllowAny,)
 
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -54,7 +54,7 @@ class UserViewSet(mixins.CreateModelMixin,
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context.update({"user": self.request.user})
+        context.update({"request": self.request})
         return context
 
     @action(
@@ -89,13 +89,11 @@ class UserViewSet(mixins.CreateModelMixin,
 
         page = self.paginate_queryset(users)
         if page is not None:
-            # TODO
             serializer = FollowSerializer(
-                page, many=True, context={
-                    'user': request.user, 'request': request})
+                page, many=True, context={'request': request})
             return self.get_paginated_response(serializer.data)
         serializer = FollowSerializer(
-            users, many=True, context={'user': request.user})
+            users, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(
@@ -107,7 +105,7 @@ class UserViewSet(mixins.CreateModelMixin,
 
         if request.method == 'POST':
             serializer = FollowSubscribeSerializer(
-                author, data=request.data, context={'user': request.user})
+                author, data=request.data, context={'request': request})
             if serializer.is_valid(raise_exception=True):
                 Follow.objects.create(user=request.user, author=author)
                 return Response(serializer.data,
@@ -123,31 +121,31 @@ class UserViewSet(mixins.CreateModelMixin,
             return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class TagsViewSet(mixins.ListModelMixin,
-                  mixins.RetrieveModelMixin,
-                  viewsets.GenericViewSet):
+class TagViewSet(mixins.ListModelMixin,
+                 mixins.RetrieveModelMixin,
+                 viewsets.GenericViewSet):
 
-    queryset = Tags.objects.all()
-    serializer_class = TagsSerializer
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
     pagination_class = None
     permission_classes = (ReadOnly | IsAdmin,)
 
 
-class IngredientsViewSet(mixins.ListModelMixin,
-                         mixins.RetrieveModelMixin,
-                         viewsets.GenericViewSet):
+class IngredientViewSet(mixins.ListModelMixin,
+                        mixins.RetrieveModelMixin,
+                        viewsets.GenericViewSet):
 
-    queryset = Ingredients.objects.all()
-    serializer_class = IngredientsSerializer
+    queryset = Ingredient.objects.all()
+    serializer_class = IngredientSerializer
     pagination_class = None
     filter_backends = (IngredientFilter,)
-    search_fields = ('^name')
+    search_fields = ('^name',)
     permission_classes = (ReadOnly | IsAdmin,)
 
 
-class RecipesViewSet(viewsets.ModelViewSet):
-    queryset = Recipes.objects.all()
-    serializer_class = RecipesSerializer
+class RecipeViewSet(viewsets.ModelViewSet):
+    queryset = Recipe.objects.all()
+    serializer_class = RecipeSerializer
     pagination_class = PagePagination
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
@@ -166,7 +164,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
         methods=['POST', 'DELETE'],
         permission_classes=(IsAuthenticated,))
     def favorite(self, request, pk=None):
-        recipe = get_object_or_404(Recipes, pk=pk)
+        recipe = get_object_or_404(Recipe, pk=pk)
 
         if request.method == 'POST':
             serializer = FavoriteSerializer(
@@ -191,7 +189,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
         methods=['POST', 'DELETE'],
         permission_classes=(IsAuthenticated,))
     def shopping_cart(self, request, pk=None):
-        recipe = get_object_or_404(Recipes, pk=pk)
+        recipe = get_object_or_404(Recipe, pk=pk)
 
         if request.method == 'POST':
             serializer = ShoppingCartSerializer(
@@ -217,8 +215,8 @@ class RecipesViewSet(viewsets.ModelViewSet):
         methods=['GET'],
         permission_classes=(IsAuthenticated,))
     def download_shopping_cart(self, request):
-        recipes = Recipes.objects.filter(cart_user__user=request.user)
-        queryset = IngredientsAmount.objects.filter(
+        recipes = Recipe.objects.filter(cart_user__user=request.user)
+        queryset = IngredientAmount.objects.filter(
             recipe__in=recipes).values('ingredient').annotate(
                 total=Sum('amount'))
 
@@ -227,7 +225,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
         for row in queryset:
 
             ingredient = get_object_or_404(
-                Ingredients, pk=row.get('ingredient'))
+                Ingredient, pk=row.get('ingredient'))
             total = row.get('total')
             text_buffer.write(
                 f'{ingredient.name} - {total} ({ingredient.measurement_unit})'

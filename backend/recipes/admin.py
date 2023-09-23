@@ -1,25 +1,25 @@
 from django.contrib import admin
 
-from .models import Tags, Ingredients, Recipes, IngredientsAmount, Follow, ShoppingCart, Favorite
+from .models import Tag, Ingredient, Recipe, IngredientAmount, Follow, ShoppingCart, Favorite
 
 
-class IngredientsInline(admin.TabularInline):
-    model = IngredientsAmount
+class IngredientInline(admin.TabularInline):
+    model = IngredientAmount
     extra = 1
 
 
-class RecipesAdmin(admin.ModelAdmin):
+class RecipeAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'author', 'image', 'text', 'cooking_time', 'date_create')
-    inlines = (IngredientsInline,)
+    inlines = (IngredientInline,)
     # search_fields = ('text',)
     # list_filter = ('pub_date',)
     # empty_value_display = '-пусто-'
 
 
-admin.site.register(Tags)
-admin.site.register(Ingredients)
-admin.site.register(IngredientsAmount)
-admin.site.register(Recipes, RecipesAdmin)
+admin.site.register(Tag)
+admin.site.register(Ingredient)
+admin.site.register(IngredientAmount)
+admin.site.register(Recipe, RecipeAdmin)
 admin.site.register(Follow)
 admin.site.register(Favorite)
 admin.site.register(ShoppingCart)
