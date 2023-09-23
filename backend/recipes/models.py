@@ -7,6 +7,14 @@ User = get_user_model()
 class Tags(models.Model):
     """Модель тегов рецептов."""
 
+    class Meta:
+        verbose_name = 'Тег'
+        verbose_name_plural = 'Теги'
+        ordering = ('id',)
+
+    def __str__(self):
+        return self.name
+
     name = models.CharField(
         max_length=200,
         blank=False,
@@ -26,17 +34,17 @@ class Tags(models.Model):
         verbose_name='Цвет'
     )
 
+
+class Ingredients(models.Model):
+    """Модель ингредиентов рецептов."""
+
     class Meta:
-        verbose_name = 'Тег'
-        verbose_name_plural = 'Теги'
+        verbose_name = 'Ингредиент'
+        verbose_name_plural = 'Ингредиенты'
         ordering = ('id',)
 
     def __str__(self):
         return self.name
-
-
-class Ingredients(models.Model):
-    """Модель ингредиентов рецептов."""
 
     name = models.CharField(
         max_length=200,
@@ -49,17 +57,14 @@ class Ingredients(models.Model):
         verbose_name='Единица измерения'
     )
 
-    class Meta:
-        verbose_name = 'Ингредиент'
-        verbose_name_plural = 'Ингредиенты'
-        ordering = ('id',)
-
-    def __str__(self):
-        return self.name
-
 
 class Recipes(models.Model):
     """Модель рецептов."""
+
+    class Meta:
+        verbose_name = 'Рецепт'
+        verbose_name_plural = 'Рецепты'
+        ordering = ('-date_create',)
 
     name = models.CharField(max_length=200, blank=False)
     author = models.ForeignKey(
@@ -87,23 +92,26 @@ class Recipes(models.Model):
         blank=False,
         verbose_name='Теги'
     )
-    cooking_time = models.IntegerField(blank=False)
-    # todo meta
+    cooking_time = models.PositiveIntegerField(blank=False)
+    date_create = models.DateTimeField(
+        'Дата создания',
+        auto_now_add=True
+    )
 
 
 class IngredientsAmount(models.Model):
     """Модель ингредиентов рецептов с количеством."""
 
-    ingredient = models.ForeignKey(Ingredients, on_delete=models.CASCADE)
-    recipe = models.ForeignKey(Recipes, on_delete=models.CASCADE)
-    amount = models.IntegerField()  # TODO Возможно не интеджер, возможно дроби
-
     class Meta:
         verbose_name = 'Количество'
-        # ordering = ('id',)
+        verbose_name_plural = 'Количество'
 
     def __str__(self):
         return f'{self.ingredient} {self.recipe}'
+
+    ingredient = models.ForeignKey(Ingredients, on_delete=models.CASCADE)
+    recipe = models.ForeignKey(Recipes, on_delete=models.CASCADE)
+    amount = models.PositiveIntegerField()
 
 
 class TagsRecipe(models.Model):
@@ -117,6 +125,7 @@ class TagsRecipe(models.Model):
 
 
 class Follow(models.Model):
+
     class Meta:
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
@@ -140,16 +149,6 @@ class Follow(models.Model):
 
 class Favorite(models.Model):
 
-    user = models.ForeignKey(User,
-                             on_delete=models.CASCADE,
-                             related_name='favorite_recipe',
-                             verbose_name='Пользователь')
-
-    recipe = models.ForeignKey(Recipes,
-                               on_delete=models.CASCADE,
-                               related_name='favorite_user',
-                               verbose_name='Рецепт')
-
     class Meta:
         verbose_name = 'Избранное'
         verbose_name_plural = 'Избранное'
@@ -160,18 +159,18 @@ class Favorite(models.Model):
             )
         ]
 
-
-class ShoppingCart(models.Model):
-
     user = models.ForeignKey(User,
                              on_delete=models.CASCADE,
-                             related_name='cart_recipe',
+                             related_name='favorite_recipe',
                              verbose_name='Пользователь')
 
     recipe = models.ForeignKey(Recipes,
                                on_delete=models.CASCADE,
-                               related_name='cart_user',
+                               related_name='favorite_user',
                                verbose_name='Рецепт')
+
+
+class ShoppingCart(models.Model):
 
     class Meta:
         verbose_name = 'Список покупок'
@@ -182,3 +181,13 @@ class ShoppingCart(models.Model):
                 name='unique_cart_user_recipe'
             )
         ]
+
+    user = models.ForeignKey(User,
+                             on_delete=models.CASCADE,
+                             related_name='cart_recipe',
+                             verbose_name='Пользователь')
+
+    recipe = models.ForeignKey(Recipes,
+                               on_delete=models.CASCADE,
+                               related_name='cart_user',
+                               verbose_name='Рецепт')

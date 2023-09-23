@@ -9,7 +9,7 @@ class IngredientsInline(admin.TabularInline):
 
 
 class RecipesAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'author', 'image', 'text', 'cooking_time')
+    list_display = ('id', 'name', 'author', 'image', 'text', 'cooking_time', 'date_create')
     inlines = (IngredientsInline,)
     # search_fields = ('text',)
     # list_filter = ('pub_date',)

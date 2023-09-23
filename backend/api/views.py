@@ -20,6 +20,7 @@ from .serializers import (TagsSerializer, IngredientsSerializer,
                           FollowSubscribeSerializer, FavoriteSerializer,
                           ShoppingCartSerializer)
 from .filters import RecipeFilter, IngredientFilter
+from .permissions import ReadOnly, IsAdmin, IsAuthor
 
 User = get_user_model()
 
@@ -45,7 +46,7 @@ class UserViewSet(mixins.CreateModelMixin,
                   mixins.RetrieveModelMixin,
                   viewsets.GenericViewSet):
 
-    permission_classes = (AllowAny,)
+    permission_classes = (ReadOnly,)
 
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -129,6 +130,7 @@ class TagsViewSet(mixins.ListModelMixin,
     queryset = Tags.objects.all()
     serializer_class = TagsSerializer
     pagination_class = None
+    permission_classes = (ReadOnly | IsAdmin,)
 
 
 class IngredientsViewSet(mixins.ListModelMixin,
@@ -140,6 +142,7 @@ class IngredientsViewSet(mixins.ListModelMixin,
     pagination_class = None
     filter_backends = (IngredientFilter,)
     search_fields = ('^name')
+    permission_classes = (ReadOnly | IsAdmin,)
 
 
 class RecipesViewSet(viewsets.ModelViewSet):
@@ -148,6 +151,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
     pagination_class = PagePagination
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
+    permission_classes = (ReadOnly | IsAuthor | IsAdmin,)
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
