@@ -4,18 +4,20 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth import get_user_model
 from django.db.models import Sum
 from django.http import HttpResponse
-from rest_framework.views import APIView
+# from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken
+# from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from .pagination import PagePagination
 from recipes.models import (Tag, Ingredient, Recipe, Follow, Favorite,
                             ShoppingCart, IngredientAmount)
 from .serializers import (TagSerializer, IngredientSerializer,
-                          RecipeSerializer, TokenSerializer, UserSerializer,
+                          RecipeSerializer, 
+                        #   TokenSerializer, 
+                          UserSerializer,
                           ChangePasswordSerializer, FollowSerializer,
                           FollowSubscribeSerializer, FavoriteSerializer,
                           ShoppingCartSerializer)
@@ -25,20 +27,20 @@ from .permissions import ReadOnly, IsAdmin, IsAuthor
 User = get_user_model()
 
 
-class TokenView(APIView):
-    permission_classes = (AllowAny,)
+# class TokenView(APIView):
+#     permission_classes = (AllowAny,)
 
-    def post(self, request):
-        serializer = TokenSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = get_object_or_404(
-            User, email=serializer.data.get('email'))
+#     def post(self, request):
+#         serializer = TokenSerializer(data=request.data)
+#         serializer.is_valid(raise_exception=True)
+#         user = get_object_or_404(
+#             User, email=serializer.data.get('email'))
 
-        refresh = RefreshToken.for_user(user)
+#         refresh = RefreshToken.for_user(user)
 
-        return Response(
-            {'auth_token': str(refresh.access_token)},
-            status=status.HTTP_201_CREATED)
+#         return Response(
+#             {'auth_token': str(refresh.access_token)},
+#             status=status.HTTP_201_CREATED)
 
 
 class UserViewSet(mixins.CreateModelMixin,

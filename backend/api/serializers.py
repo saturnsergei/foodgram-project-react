@@ -11,23 +11,23 @@ from recipes.models import (Tag, Ingredient, Recipe,
 User = get_user_model()
 
 
-class TokenSerializer(serializers.Serializer):
-    """Сериализатор для получения токена."""
+# class TokenSerializer(serializers.Serializer):
+#     """Сериализатор для получения токена."""
 
-    email = serializers.EmailField(max_length=150)
-    password = serializers.CharField(max_length=254)
+#     email = serializers.EmailField(max_length=150)
+#     password = serializers.CharField(max_length=254)
 
-    def validate(self, data):
-        user = get_object_or_404(
-            User, email=data.get('email'))
+#     def validate(self, data):
+#         user = get_object_or_404(
+#             User, email=data.get('email'))
 
-        if not check_password(data.get('password'), user.password):
-            raise serializers.ValidationError(
-                'Неправильный пароль')
-        return data
+#         if not check_password(data.get('password'), user.password):
+#             raise serializers.ValidationError(
+#                 'Неправильный пароль')
+#         return data
 
 
-# class LogoutSerializer(serializers.Serializer):
+# # class LogoutSerializer(serializers.Serializer):
 
 class IsSubscribedSerializer(serializers.ModelSerializer):
 

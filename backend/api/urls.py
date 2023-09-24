@@ -24,12 +24,7 @@ router_v1.register(r'users', views.UserViewSet, basename='users')
 # )
 # router_v1.register('users', UserViewSet, basename='users')
 
-auth = [
-    path('token/login/', views.TokenView.as_view()),
-    # path('token/logout/', views.Logout.as_view()),
-]
-
 urlpatterns = [
-    path('auth/', include(auth)),
+    path('auth/', include('djoser.urls.authtoken')),
     path('', include(router_v1.urls)),
 ]
