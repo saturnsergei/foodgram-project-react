@@ -6,30 +6,13 @@ from django.contrib.auth.hashers import make_password, check_password
 from django.core.files.base import ContentFile
 
 from recipes.models import (Tag, Ingredient, Recipe,
-                            IngredientAmount, ShoppingCart)
+                            IngredientAmount)
 
 User = get_user_model()
 
 
-# class TokenSerializer(serializers.Serializer):
-#     """Сериализатор для получения токена."""
-
-#     email = serializers.EmailField(max_length=150)
-#     password = serializers.CharField(max_length=254)
-
-#     def validate(self, data):
-#         user = get_object_or_404(
-#             User, email=data.get('email'))
-
-#         if not check_password(data.get('password'), user.password):
-#             raise serializers.ValidationError(
-#                 'Неправильный пароль')
-#         return data
-
-
-# # class LogoutSerializer(serializers.Serializer):
-
 class IsSubscribedSerializer(serializers.ModelSerializer):
+    """Сериализатор вычисления подписан ли пользователь на автора."""
 
     is_subscribed = serializers.SerializerMethodField()
 
@@ -41,6 +24,7 @@ class IsSubscribedSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(IsSubscribedSerializer):
+    """Сериализатор для модели пользователя."""
 
     class Meta:
         model = User
@@ -63,6 +47,7 @@ class UserSerializer(IsSubscribedSerializer):
 
 
 class ChangePasswordSerializer(serializers.ModelSerializer):
+    """Сериализатор для изменения пароля."""
     new_password = serializers.CharField(write_only=True, required=True)
     current_password = serializers.CharField(write_only=True, required=True)
 
@@ -96,6 +81,7 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 
 class IngredientAmountSerializer(serializers.ModelSerializer):
+    """Сериализатор для количества ингредиентов в рецепте."""
 
     id = serializers.ReadOnlyField(source='ingredient.id')
     name = serializers.ReadOnlyField(source='ingredient.name')
@@ -108,6 +94,7 @@ class IngredientAmountSerializer(serializers.ModelSerializer):
 
 
 class Base64ImageField(serializers.ImageField):
+    """Сериализатор для обработки изображения."""
     def to_representation(self, value):
         if value:
             return value.url
@@ -207,6 +194,7 @@ class RecipeShortSerializer(serializers.ModelSerializer):
 
 
 class FollowSerializer(IsSubscribedSerializer):
+    """Сериализатор для подписки пользователя на автора."""
 
     recipes_count = serializers.SerializerMethodField()
     recipes = RecipeShortSerializer(many=True, read_only=True)
@@ -235,6 +223,7 @@ class FollowSerializer(IsSubscribedSerializer):
 
 
 class FollowSubscribeSerializer(FollowSerializer):
+    """Сериализатор для валидации подписок."""
 
     def validate(self, data):
         author = self.instance
@@ -251,6 +240,7 @@ class FollowSubscribeSerializer(FollowSerializer):
 
 
 class FavoriteSerializer(RecipeShortSerializer):
+    """Сериализатор для валидации избранных рецептов."""
 
     def validate(self, data):
         recipe = self.instance
@@ -264,15 +254,13 @@ class FavoriteSerializer(RecipeShortSerializer):
 
 
 class ShoppingCartSerializer(RecipeShortSerializer):
+    """Сериализатор для списка покупок."""
 
     def validate(self, data):
         recipe = self.instance
         user = self.context['user']
 
-        if ShoppingCart.objects.filter(
-            user=user,
-            recipe=recipe
-        ).exists():
+        if recipe.cart_user.filter(user=user).exists():
             raise serializers.ValidationError(
                 'Рецепт уже добавлен в список покупок')
 

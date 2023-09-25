@@ -119,6 +119,7 @@ class IngredientAmount(models.Model):
 
 
 class Follow(models.Model):
+    """Модель подписок пользователей на автаров."""
 
     class Meta:
         verbose_name = 'Подписка'
@@ -142,6 +143,7 @@ class Follow(models.Model):
 
 
 class Favorite(models.Model):
+    """Модель избранных рецептов"""
 
     class Meta:
         verbose_name = 'Избранное'
@@ -165,6 +167,7 @@ class Favorite(models.Model):
 
 
 class ShoppingCart(models.Model):
+    """Модель списка покупок"""
 
     class Meta:
         verbose_name = 'Список покупок'
