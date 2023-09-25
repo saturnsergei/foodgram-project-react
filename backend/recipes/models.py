@@ -66,7 +66,10 @@ class Recipe(models.Model):
         verbose_name_plural = 'Рецепты'
         ordering = ('-date_create',)
 
-    name = models.CharField(max_length=200, blank=False)
+    name = models.CharField(
+        max_length=200,
+        blank=False,
+        verbose_name='Название рецепта')
     author = models.ForeignKey(
         User,
         related_name='recipes',
@@ -92,9 +95,10 @@ class Recipe(models.Model):
         blank=False,
         verbose_name='Теги'
     )
-    cooking_time = models.PositiveIntegerField(blank=False)
+    cooking_time = models.PositiveIntegerField(
+        blank=False, verbose_name='Время приготовления')
     date_create = models.DateTimeField(
-        'Дата создания',
+        verbose_name='Дата создания',
         auto_now_add=True
     )
 
