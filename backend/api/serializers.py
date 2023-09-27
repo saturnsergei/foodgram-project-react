@@ -124,11 +124,15 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def get_is_favorited(self, obj):
         user = self.context.get('user')
-        return obj.favorite_user.filter(user=user).exists()
+        if user.is_authenticated:
+            return obj.favorite_user.filter(user=user).exists()
+        return False
 
     def get_is_in_shopping_cart(self, obj):
         user = self.context.get('user')
-        return obj.cart_user.filter(user=user).exists()
+        if user.is_authenticated:
+            return obj.cart_user.filter(user=user).exists()
+        return False
 
     class Meta:
         model = Recipe
@@ -151,10 +155,17 @@ class RecipeSerializer(serializers.ModelSerializer):
                 IngredientAmount.objects.create(
                     ingredient=current_ingredient, recipe=recipe, amount=amount
                 )
+        else:
+            raise serializers.ValidationError(
+                {'ingredients': ['Обязательное поле.']})
+
         if 'tags' in self.initial_data:
             tags = self.initial_data.get('tags')
             for tag in tags:
                 recipe.tags.add(tag)
+        else:
+            raise serializers.ValidationError(
+                {'tags': ['Обязательное поле.']})
         recipe.save()
 
         return recipe
@@ -173,11 +184,19 @@ class RecipeSerializer(serializers.ModelSerializer):
                     ingredient=current_ingredient,
                     recipe=instance, amount=amount
                 )
+        else:
+            raise serializers.ValidationError(
+                {'ingredients': ['Обязательное поле.']})
+
         if 'tags' in self.initial_data:
             tags = self.initial_data.get('tags')
             instance.tags.set([])
             for tag in tags:
                 instance.tags.add(tag)
+        else:
+            raise serializers.ValidationError(
+                {'tags': ['Обязательное поле.']})
+
         instance.__dict__.update(**validated_data)
         instance.save()
         return instance

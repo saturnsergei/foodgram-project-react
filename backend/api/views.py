@@ -48,7 +48,7 @@ class UserViewSet(mixins.CreateModelMixin,
         permission_classes=(IsAuthenticated,))
     def me(self, request):
 
-        serializer = UserSerializer(request.user)
+        serializer = UserSerializer(request.user, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(
