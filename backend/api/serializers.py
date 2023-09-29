@@ -147,14 +147,18 @@ class RecipeSerializer(serializers.ModelSerializer):
 
         if 'ingredients' in self.initial_data:
             ingredients = self.initial_data.get('ingredients')
+            amount_list = []
 
             for ingredient in ingredients:
                 id = ingredient.get('id')
                 amount = ingredient.get('amount')
                 current_ingredient = get_object_or_404(Ingredient, pk=id)
-                IngredientAmount.objects.create(
+                amount_item = IngredientAmount(
                     ingredient=current_ingredient, recipe=recipe, amount=amount
                 )
+                amount_list.append(amount_item)
+            IngredientAmount.objects.bulk_create(amount_list)
+
         else:
             raise serializers.ValidationError(
                 {'ingredients': ['Обязательное поле.']})
@@ -175,15 +179,19 @@ class RecipeSerializer(serializers.ModelSerializer):
 
         if 'ingredients' in self.initial_data:
             ingredients = self.initial_data.get('ingredients')
+            amount_list = []
 
             for ingredient in ingredients:
                 id = ingredient.get('id')
                 amount = ingredient.get('amount')
                 current_ingredient = get_object_or_404(Ingredient, pk=id)
-                IngredientAmount.objects.create(
+                amount_item = IngredientAmount(
                     ingredient=current_ingredient,
                     recipe=instance, amount=amount
                 )
+                amount_list.append(amount_item)
+            IngredientAmount.objects.bulk_create(amount_list)
+
         else:
             raise serializers.ValidationError(
                 {'ingredients': ['Обязательное поле.']})

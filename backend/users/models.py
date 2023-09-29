@@ -19,6 +19,10 @@ class User(AbstractUser):
         'Роль', max_length=16, choices=CHOICES, default='user')
     email = models.EmailField(blank=False, unique=True)
 
+    USERNAME_FIELD = "email"
+    EMAIL_FIELD = 'email'
+    REQUIRED_FIELDS = ['first_name', 'last_name']
+
     class Meta:
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'

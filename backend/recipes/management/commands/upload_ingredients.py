@@ -1,9 +1,10 @@
 import os
 from csv import DictReader
+
 from django.core.management import BaseCommand
 
 from recipes.models import Ingredient
-from foodgram_backend.settings import BASE_DIR
+from foodgram_backend.settings import STATIC_ROOT
 
 
 class Command(BaseCommand):
@@ -14,7 +15,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         file_path = os.path.join(
-            BASE_DIR, 'static/data/', options['file_name'])
+            STATIC_ROOT, 'data/', options['file_name'])
 
         self.stdout.write('Загрузка csv-файла')
         with open(file_path, 'r', encoding='utf-8') as csv_file:

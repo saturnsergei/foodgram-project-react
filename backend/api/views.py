@@ -25,10 +25,14 @@ from .serializers import (TagSerializer, IngredientSerializer,
 User = get_user_model()
 
 
+class ListRetrieveViewSet(mixins.ListModelMixin,
+                          mixins.RetrieveModelMixin,
+                          viewsets.GenericViewSet):
+    pass
+
+
 class UserViewSet(mixins.CreateModelMixin,
-                  mixins.ListModelMixin,
-                  mixins.RetrieveModelMixin,
-                  viewsets.GenericViewSet):
+                  ListRetrieveViewSet):
     """Вьюсет для пользователей."""
 
     permission_classes = (AllowAny,)
@@ -106,25 +110,19 @@ class UserViewSet(mixins.CreateModelMixin,
             return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class TagViewSet(mixins.ListModelMixin,
-                 mixins.RetrieveModelMixin,
-                 viewsets.GenericViewSet):
+class TagViewSet(ListRetrieveViewSet):
     """Вьюсет для тегов."""
 
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
-    pagination_class = None
     permission_classes = (ReadOnly | IsAdmin,)
 
 
-class IngredientViewSet(mixins.ListModelMixin,
-                        mixins.RetrieveModelMixin,
-                        viewsets.GenericViewSet):
+class IngredientViewSet(ListRetrieveViewSet):
     """Вьюсет для ингредиентов"""
 
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
-    pagination_class = None
     filter_backends = (IngredientFilter,)
     search_fields = ('^name',)
     permission_classes = (ReadOnly | IsAdmin,)

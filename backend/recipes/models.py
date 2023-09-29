@@ -1,3 +1,4 @@
+from colorfield.fields import ColorField
 from django.contrib.auth import get_user_model
 from django.db import models
 
@@ -27,8 +28,7 @@ class Tag(models.Model):
         unique=True,
         verbose_name='Слаг'
     )
-    color = models.CharField(
-        max_length=7,
+    color = ColorField(
         blank=False,
         unique=True,
         verbose_name='Цвет'
@@ -95,7 +95,7 @@ class Recipe(models.Model):
         blank=False,
         verbose_name='Теги'
     )
-    cooking_time = models.PositiveIntegerField(
+    cooking_time = models.PositiveSmallIntegerField(
         blank=False, verbose_name='Время приготовления')
     date_create = models.DateTimeField(
         verbose_name='Дата создания',
