@@ -3,7 +3,6 @@ import base64
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password, check_password
 from django.core.files.base import ContentFile
-from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
 from recipes.models import (Tag, Ingredient, Recipe,
@@ -58,7 +57,6 @@ class ChangePasswordSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         user = self.instance
-
         if not check_password(data.get('current_password'), user.password):
             raise serializers.ValidationError(
                 'Неправильный пароль')
@@ -142,69 +140,43 @@ class RecipeSerializer(serializers.ModelSerializer):
         read_only_fields = ('author',)
         depth = 1
 
-    def create(self, validated_data):
-        recipe = Recipe.objects.create(**validated_data)
-
+    def create_update_ingredients(self, recipe):
         if 'ingredients' in self.initial_data:
             ingredients = self.initial_data.get('ingredients')
             amount_list = []
-
             for ingredient in ingredients:
                 id = ingredient.get('id')
                 amount = ingredient.get('amount')
-                current_ingredient = get_object_or_404(Ingredient, pk=id)
                 amount_item = IngredientAmount(
-                    ingredient=current_ingredient, recipe=recipe, amount=amount
+                    ingredient_id=int(id), recipe=recipe, amount=amount
                 )
                 amount_list.append(amount_item)
             IngredientAmount.objects.bulk_create(amount_list)
-
         else:
             raise serializers.ValidationError(
                 {'ingredients': ['Обязательное поле.']})
 
+    def create(self, validated_data):
+        recipe = Recipe.objects.create(**validated_data)
+        self.create_update_ingredients(recipe)
         if 'tags' in self.initial_data:
             tags = self.initial_data.get('tags')
-            for tag in tags:
-                recipe.tags.add(tag)
+            recipe.tags.set(tags)
         else:
             raise serializers.ValidationError(
                 {'tags': ['Обязательное поле.']})
         recipe.save()
-
         return recipe
 
     def update(self, instance, validated_data):
         IngredientAmount.objects.filter(recipe=instance).delete()
-
-        if 'ingredients' in self.initial_data:
-            ingredients = self.initial_data.get('ingredients')
-            amount_list = []
-
-            for ingredient in ingredients:
-                id = ingredient.get('id')
-                amount = ingredient.get('amount')
-                current_ingredient = get_object_or_404(Ingredient, pk=id)
-                amount_item = IngredientAmount(
-                    ingredient=current_ingredient,
-                    recipe=instance, amount=amount
-                )
-                amount_list.append(amount_item)
-            IngredientAmount.objects.bulk_create(amount_list)
-
-        else:
-            raise serializers.ValidationError(
-                {'ingredients': ['Обязательное поле.']})
-
+        self.create_update_ingredients(instance)
         if 'tags' in self.initial_data:
             tags = self.initial_data.get('tags')
-            instance.tags.set([])
-            for tag in tags:
-                instance.tags.add(tag)
+            instance.tags.set(tags)
         else:
             raise serializers.ValidationError(
                 {'tags': ['Обязательное поле.']})
-
         instance.__dict__.update(**validated_data)
         instance.save()
         return instance
@@ -242,7 +214,6 @@ class FollowSerializer(IsSubscribedSerializer):
         data = super().to_representation(instance)
         request = self.context.get('request')
         recipes_limit = request.query_params.get('recipes_limit')
-
         if recipes_limit is not None and recipes_limit.isdigit():
             recipes_limit = int(recipes_limit)
             data['recipes'] = data['recipes'][:recipes_limit]
@@ -256,14 +227,11 @@ class FollowSubscribeSerializer(FollowSerializer):
     def validate(self, data):
         author = self.instance
         request = self.context['request']
-
         if request.user == author:
             raise serializers.ValidationError(
                 'Нельзя подписаться на самого себя')
-
         if author.following.filter(user=request.user).exists():
             raise serializers.ValidationError('Нельзя подписаться второй раз')
-
         return data
 
 
@@ -273,11 +241,9 @@ class FavoriteSerializer(RecipeShortSerializer):
     def validate(self, data):
         recipe = self.instance
         user = self.context['user']
-
         if recipe.favorite_user.filter(user=user).exists():
             raise serializers.ValidationError(
                 'Нельзя добавить в избранное второй раз')
-
         return data
 
 
@@ -287,9 +253,7 @@ class ShoppingCartSerializer(RecipeShortSerializer):
     def validate(self, data):
         recipe = self.instance
         user = self.context['user']
-
         if recipe.cart_user.filter(user=user).exists():
             raise serializers.ValidationError(
                 'Рецепт уже добавлен в список покупок')
-
         return data

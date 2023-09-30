@@ -1,8 +1,15 @@
 from colorfield.fields import ColorField
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.db import models
 
 User = get_user_model()
+
+
+def validate_positive_int(value):
+    if value < 0:
+        raise ValidationError(
+            'Число не может быть отрицательным')
 
 
 class Tag(models.Model):
@@ -96,7 +103,9 @@ class Recipe(models.Model):
         verbose_name='Теги'
     )
     cooking_time = models.PositiveSmallIntegerField(
-        blank=False, verbose_name='Время приготовления')
+        blank=False,
+        validators=[validate_positive_int],
+        verbose_name='Время приготовления')
     date_create = models.DateTimeField(
         verbose_name='Дата создания',
         auto_now_add=True

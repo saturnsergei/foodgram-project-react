@@ -36,7 +36,6 @@ class UserViewSet(mixins.CreateModelMixin,
     """Вьюсет для пользователей."""
 
     permission_classes = (AllowAny,)
-
     queryset = User.objects.all()
     serializer_class = UserSerializer
     pagination_class = PagePagination
@@ -51,7 +50,6 @@ class UserViewSet(mixins.CreateModelMixin,
         methods=['GET'],
         permission_classes=(IsAuthenticated,))
     def me(self, request):
-
         serializer = UserSerializer(request.user, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -73,9 +71,7 @@ class UserViewSet(mixins.CreateModelMixin,
         methods=['GET'],
         permission_classes=(IsAuthenticated,))
     def subscriptions(self, request):
-
         users = User.objects.filter(following__user=request.user)
-
         page = self.paginate_queryset(users)
         if page is not None:
             serializer = FollowSerializer(
@@ -131,7 +127,8 @@ class IngredientViewSet(ListRetrieveViewSet):
 class RecipeViewSet(viewsets.ModelViewSet):
     """Вьюсет для рецептов."""
 
-    queryset = Recipe.objects.all()
+    queryset = Recipe.objects.select_related(
+        'author').prefetch_related('tags').all()
     serializer_class = RecipeSerializer
     pagination_class = PagePagination
     filter_backends = (DjangoFilterBackend,)
@@ -147,7 +144,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return context
 
     def custom_create_delete(self, request, model, model_serializer, pk=None):
-        """Метод для создания и удаления записи о рецепте для модели."""
+        """Метод добавления/удаления рецепта в избранное или список покупок"""
 
         recipe = get_object_or_404(Recipe, pk=pk)
 
@@ -195,22 +192,18 @@ class RecipeViewSet(viewsets.ModelViewSet):
         queryset = IngredientAmount.objects.filter(
             recipe__in=recipes).values('ingredient').annotate(
                 total=Sum('amount'))
-
         text_buffer = io.StringIO()
         text_buffer.write('Ваш список покупок: \n\n')
-        for row in queryset:
 
+        for row in queryset:
             ingredient = get_object_or_404(
                 Ingredient, pk=row.get('ingredient'))
             total = row.get('total')
             text_buffer.write(
                 f'{ingredient.name} - {total} ({ingredient.measurement_unit})'
                 + '\n')
-
         file_data = text_buffer.getvalue()
-
         response = HttpResponse(file_data, content_type='text/plain')
         response[
             'Content-Disposition'] = 'attachment; filename="shopping_list.txt"'
-
         return response
