@@ -1,0 +1,36 @@
+version: '3'
+
+volumes:
+  food_data:
+  food_static:
+  food_media:
+
+services:
+  db:
+    image: postgres:13
+    env_file: .env
+    volumes:
+      - food_data:/var/lib/postgresql/data
+  backend:
+    build: ./backend/
+    env_file: .env
+    depends_on:
+      - db
+    volumes:
+      - food_static:/backend_static
+      - food_media:/app/media/
+  frontend:
+    build: ./frontend/
+    command: cp -r /app/build/. /result_build/
+    volumes:
+      - food_static:/result_build/
+  gateway:
+    build: ./nginx/
+    depends_on:
+      - backend
+      - frontend
+    ports:
+      - 9000:80
+    volumes:
+      - food_static:/staticfiles
+      - food_media:/app/media/
