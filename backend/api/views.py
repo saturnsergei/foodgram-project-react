@@ -101,8 +101,7 @@ class UserViewSet(mixins.CreateModelMixin,
             return Response({'errors': 'Вы не подписаны на автора'},
                             status=status.HTTP_400_BAD_REQUEST)
         else:
-            follower = Follow.objects.filter(user=request.user, author=author)
-            follower.delete()
+            Follow.objects.filter(user=request.user, author=author).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -162,9 +161,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return Response({'errors': 'Рецепт не добавлен'},
                             status=status.HTTP_400_BAD_REQUEST)
         else:
-            record = model.objects.filter(
-                user=request.user, recipe=recipe)
-            record.delete()
+            model.objects.filter(
+                user=request.user, recipe=recipe).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
