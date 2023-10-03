@@ -58,7 +58,7 @@ server {
     server_name xxx.xxx.xx.xxx;
 
     location / {
-        proxy_pass http://127.0.0.1:9000;
+        proxy_pass http://127.0.0.1:8080;
     }
 
 }

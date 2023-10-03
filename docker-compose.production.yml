@@ -7,12 +7,12 @@ volumes:
 
 services:
   db:
-    image: postgres:13
+    image: postgres:13.10
     env_file: .env
     volumes:
       - food_data:/var/lib/postgresql/data
   backend:
-    build: ./backend/
+    image: sergeisaturn/foodgram_backend
     env_file: .env
     depends_on:
       - db
@@ -20,15 +20,17 @@ services:
       - food_static:/backend_static
       - food_media:/app/media/
   frontend:
-    build: ./frontend/
+    image: sergeisaturn/foodgram_frontend
+    env_file: .env
     command: cp -r /app/build/. /result_build/
     volumes:
       - food_static:/result_build/
   gateway:
-    build: ./nginx/
+    image: sergeisaturn/foodgram_gateway
     depends_on:
       - backend
       - frontend
+    env_file: .env
     ports:
       - 8080:80
     volumes:
