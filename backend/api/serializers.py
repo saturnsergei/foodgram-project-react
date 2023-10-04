@@ -184,6 +184,7 @@ class RecipeSerializer(serializers.ModelSerializer):
 
 class RecipeShortSerializer(serializers.ModelSerializer):
     """Сериализатор для сокращенной модели рецептов."""
+    image = Base64ImageField()
 
     class Meta:
         model = Recipe
