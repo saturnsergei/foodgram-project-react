@@ -7,6 +7,7 @@ from .models import (Tag, Ingredient, Recipe, IngredientAmount,
 class IngredientInline(admin.TabularInline):
     model = IngredientAmount
     extra = 1
+    autocomplete_fields = ['ingredient']
 
 
 @admin.register(Recipe)
@@ -23,6 +24,13 @@ class RecipeAdmin(admin.ModelAdmin):
     favorite_count.short_description = 'Количество добавлений в избранное'
 
 
+@admin.register(IngredientAmount)
+class IngredientAmount(admin.ModelAdmin):
+    model = IngredientAmount
+    list_display = ('id', 'ingredient', 'recipe', 'amount',)
+    autocomplete_fields = ['ingredient']
+
+
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
     list_display = ('name', 'slug', 'color',)
@@ -35,7 +43,6 @@ class IngredientAdmin(admin.ModelAdmin):
     inlines = (IngredientInline,)
 
 
-admin.site.register(IngredientAmount)
 admin.site.register(Follow)
 admin.site.register(Favorite)
 admin.site.register(ShoppingCart)

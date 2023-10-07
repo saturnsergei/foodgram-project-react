@@ -10,6 +10,9 @@ def validate_positive_int(value):
     if value < 0:
         raise ValidationError(
             'Число не может быть отрицательным')
+    if value > 32767:
+        raise ValidationError(
+            'Число слишком большое')
 
 
 class Tag(models.Model):
@@ -79,6 +82,9 @@ class Recipe(models.Model):
         verbose_name_plural = 'Рецепты'
         ordering = ('-date_create',)
 
+    def __str__(self):
+        return self.name
+
     name = models.CharField(
         max_length=200,
         blank=False,
@@ -126,7 +132,7 @@ class IngredientAmount(models.Model):
         verbose_name_plural = 'Количество'
 
     def __str__(self):
-        return f'{self.ingredient} {self.recipe}'
+        return f'{self.ingredient} - {self.recipe}'
 
     ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
@@ -145,6 +151,9 @@ class Follow(models.Model):
                 name='unique_user_author'
             )
         ]
+
+    def __str__(self):
+        return f'{self.author} - {self.user}'
 
     user = models.ForeignKey(User,
                              on_delete=models.CASCADE,
@@ -170,6 +179,9 @@ class Favorite(models.Model):
             )
         ]
 
+    def __str__(self):
+        return f'{self.user} - {self.recipe}'
+
     user = models.ForeignKey(User,
                              on_delete=models.CASCADE,
                              related_name='favorite_recipe',
@@ -193,6 +205,9 @@ class ShoppingCart(models.Model):
                 name='unique_cart_user_recipe'
             )
         ]
+
+    def __str__(self):
+        return f'{self.user} - {self.recipe}'
 
     user = models.ForeignKey(User,
                              on_delete=models.CASCADE,

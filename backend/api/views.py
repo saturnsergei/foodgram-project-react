@@ -100,9 +100,8 @@ class UserViewSet(mixins.CreateModelMixin,
         if not queryset.exists():
             return Response({'errors': 'Вы не подписаны на автора'},
                             status=status.HTTP_400_BAD_REQUEST)
-        else:
-            Follow.objects.filter(user=request.user, author=author).delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
+        Follow.objects.filter(user=request.user, author=author).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class TagViewSet(ListRetrieveViewSet):
