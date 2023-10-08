@@ -5,7 +5,7 @@ from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import mixins, status, viewsets
+from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -132,6 +132,40 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
     permission_classes = (ReadOnly | IsAuthor | IsAdmin,)
+
+    def custom_validate(self):
+        ingredients = self.request.data.get('ingredients', None)
+        if ingredients is None or len(ingredients) == 0:
+            raise serializers.ValidationError(
+                {'ingredients': ['Обязательное поле.']})
+        ids = [item['id'] for item in ingredients]
+        if len(ids) != len(set(ids)):
+            raise serializers.ValidationError({'ingredients': [
+                'Переданы повторяющиеся ингредиенты']})
+        found_id = Ingredient.objects.filter(id__in=ids)
+        if len(ids) != found_id.count():
+            raise serializers.ValidationError({'ingredients': [
+                'Передан несуществующий ингредиент']})
+
+        tags = self.request.data.get('tags', None)
+        if tags is None or len(tags) == 0:
+            raise serializers.ValidationError(
+                {'tags': ['Обязательное поле.']})
+        if len(tags) != len(set(tags)):
+            raise serializers.ValidationError({'tags': [
+                'Переданы повторяющиеся теги']})
+        found_tags = Tag.objects.filter(id__in=tags)
+        if len(tags) != found_tags.count():
+            raise serializers.ValidationError({'tags': [
+                'Передан несуществующий тег']})
+
+    def create(self, request, *args, **kwargs):
+        self.custom_validate()
+        return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        self.custom_validate()
+        return super().update(request, *args, **kwargs)
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
